@@ -41,3 +41,7 @@ package-lock.json
 # ---- OS-specific ----
 Thumbs.db
 .DS_Store
+
+#---whatsapp-web.js specific---
+.wwebjs_auth
+.wwebjs_cache
