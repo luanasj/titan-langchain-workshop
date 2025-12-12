@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot API Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden flex flex-col h-[80vh]">
+        
+        <!-- Header / Configuration -->
+        <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+            <h1 class="font-bold text-lg">Chatbot Tester</h1>
+            <div class="flex items-center space-x-2 text-sm">
+                <label for="api-url" class="opacity-80">API URL:</label>
+                <input type="text" id="api-url" value="http://127.0.0.1:5000" 
+                       class="text-black px-2 py-1 rounded border border-blue-400 focus:outline-none focus:border-blue-800 w-48" 
+                       placeholder="http://localhost:5000">
+            </div>
+        </div>
+
+        <!-- Chat History Display -->
+        <div id="chat-display" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 scrollbar-hide">
+            <!-- Messages will appear here -->
+            <div class="flex justify-start">
+                <div class="bg-gray-200 text-gray-800 rounded-lg py-2 px-4 max-w-[80%] shadow-sm">
+                    Hello! I am ready to test your API. Check the API URL above and say something.
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="loading" class="hidden px-4 py-2 text-sm text-gray-500 italic">
+            Waiting for API response...
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-gray-200">
+            <div class="flex space-x-2">
+                <textarea id="user-input" rows="1" 
+                          class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden" 
+                          placeholder="Type your question here..."></textarea>
+                <button id="send-btn" onclick="sendMessage()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatDisplay = document.getElementById('chat-display');
+        const userInput = document.getElementById('user-input');
+        const apiUrlInput = document.getElementById('api-url');
+        const loadingIndicator = document.getElementById('loading');
+
+        // Allow sending with Enter key (Shift+Enter for new line)
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if(this.value === '') this.style.height = 'auto';
+        });
+
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            // Styling based on sender
+            const userClasses = 'bg-blue-600 text-white rounded-br-none';
+            const botClasses = 'bg-white border border-gray-200 text-gray-800 rounded-bl-none';
+            
+            bubble.className = `rounded-lg py-2 px-4 max-w-[80%] shadow-sm whitespace-pre-wrap ${sender === 'user' ? userClasses : botClasses}`;
+            bubble.textContent = text;
+            
+            div.appendChild(bubble);
+            chatDisplay.appendChild(div);
+            
+            // Scroll to bottom
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            const baseUrl = apiUrlInput.value.replace(/\/$/, ""); // Remove trailing slash if present
+
+            if (!text) return;
+
+            // 1. Add User Message to UI
+            appendMessage(text, 'user');
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            
+            // 2. Show Loading
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                // 3. Construct URL: /hello/question?text=...
+                // Using encodeURIComponent to handle special characters correctly
+                const targetUrl = `${baseUrl}/question?text=${encodeURIComponent(text)}`;
+
+                const response = await fetch(targetUrl, {
+                    method: 'GET', // Your Python code uses request.args (Query Params), so we use GET
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 4. Add Bot Response to UI
+                // Your API returns { "resposta": ... }
+                if (data.status === 'sucesso' && data.resposta) {
+                    appendMessage(data.resposta, 'bot');
+                } else {
+                    appendMessage("Error: API returned unexpected format.", 'bot');
+                    console.log(data);
+                }
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                let errorMsg = "Could not connect to the API.";
+                
+                if (error.message.includes("Failed to fetch")) {
+                    errorMsg += " (Check CORS or if server is running)";
+                }
+                
+                appendMessage(errorMsg, 'bot');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
