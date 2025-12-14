@@ -14,7 +14,7 @@ python -m venv <nome-da-venv>
 ```
 Inicia:
 ```bash
-python -m venv <nome-da-venv>
+<nome-da-venv>\Scripts\activate
 ```
 ### Variáveis de Ambiente
 
