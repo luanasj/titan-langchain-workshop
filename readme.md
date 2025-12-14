@@ -46,4 +46,4 @@ flask --app src\server run
 node whatsapp.js
 ```
 ### Consuma no Navegador
-    - Para usar a interface web acesse o arquivo index.html através do caminho do arquivo ou use a extensão Live Server.
+- Para usar a interface web acesse o arquivo index.html através do caminho do arquivo ou use a extensão Live Server.
