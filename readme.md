@@ -20,6 +20,8 @@ python -m venv <nome-da-venv>
 
 Renomeie o .env.example como .env e preencha com a sua chave de API.
 
+* gere a sua chave de API em 'https://console.groq.com/keys'
+
 ## Instalação de Dependências
 Use esses dois comandos no terminal:
 
